@@ -1,7 +1,9 @@
-const got = require('got');
+const express = require('express')
+const got = (...args) => import('got').then(({ default: got }) => got(...args))
 const crypto = require('crypto');
 const OAuth = require('oauth-1.0a');
 const qs = require('querystring');
+const fs = require('fs')
 
 const readline = require('readline').createInterface({
   input: process.stdin,
@@ -56,7 +58,8 @@ async function requestToken() {
     method: 'POST'
   }));
 
-  const req = await got.post(requestTokenURL, {
+  const req = await got(requestTokenURL, {
+    method: 'POST',
     headers: {
       Authorization: authHeader["Authorization"]
     }
@@ -78,7 +81,8 @@ async function accessToken({
     method: 'POST'
   }));
   const path = `https://api.twitter.com/oauth/access_token?oauth_verifier=${verifier}&oauth_token=${oauth_token}`
-  const req = await got.post(path, {
+  const req = await got(path, {
+    method: 'POST',
     headers: {
       Authorization: authHeader["Authorization"]
     }
@@ -106,7 +110,8 @@ async function getRequest({
     method: 'POST'
   }, token));
 
-  const req = await got.post(endpointURL, {
+  const req = await got(endpointURL, {
+    method: 'POST',
     json: data,
     responseType: 'json',
     headers: {

@@ -12,6 +12,7 @@
   "dependencies": {
     "express": "^4.19.2",
     "got": "^14.4.1",
+    "needle": "^3.3.1",
     "oauth-1.0a": "^2.2.6"
   }
 }
