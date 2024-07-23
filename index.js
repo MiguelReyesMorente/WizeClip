@@ -4,7 +4,8 @@ const OAuth = require('oauth-1.0a');
 const qs = require('querystring');
 const fs = require('fs');
 const { text } = require('express');
-const pathToFile = "Video/summaries.txt"
+const pathToTextFile = "Text/summaries.txt";
+const pathToVideoFile = "Video/220:009-300:009";
 
 const readline = require('readline').createInterface({
   input: process.stdin,
@@ -25,13 +26,13 @@ const consumer_secret = 'tzqRcGPsgEntD5hVX1T1l5ko2xgHGEX8FMqx1dO19jQyimtaAf';
 
 // Be sure to add replace the text of the with the text you wish to Tweet.
 // You can also add parameters to post polls, quote Tweets, Tweet with reply settings, and Tweet to Super Followers in addition to other features.
-// let reader = fs.createReadStream(pathToFile, {
+// let reader = fs.createReadStream(pathToTextFile, {
 //   flag: 'a+',
 //   encoding: 'UTF-8',
 //   start: 3,
 //   end: 6
 // });
-// fs.createReadStream(pathToFile)
+// fs.createReadStream(pathToTextFile)
 
 // const data = {
 //   "text": ""
@@ -134,7 +135,7 @@ async function getRequest({
     method: 'POST'
   }, token));
 
-  let reader = fs.createReadStream(pathToFile, {
+  let reader = fs.createReadStream(pathToTextFile, {
     start: 23,
     end: 211
   });
