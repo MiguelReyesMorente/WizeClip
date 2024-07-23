@@ -1,9 +1,10 @@
-const express = require('express')
 const got = (...args) => import('got').then(({ default: got }) => got(...args))
 const crypto = require('crypto');
 const OAuth = require('oauth-1.0a');
 const qs = require('querystring');
-const fs = require('fs')
+const fs = require('fs');
+const { text } = require('express');
+const pathToFile = "Video/summaries.txt"
 
 const readline = require('readline').createInterface({
   input: process.stdin,
@@ -24,9 +25,17 @@ const consumer_secret = 'tzqRcGPsgEntD5hVX1T1l5ko2xgHGEX8FMqx1dO19jQyimtaAf';
 
 // Be sure to add replace the text of the with the text you wish to Tweet.
 // You can also add parameters to post polls, quote Tweets, Tweet with reply settings, and Tweet to Super Followers in addition to other features.
-const data = {
-  "text": "Mi primer tweet en js"
-};
+// let reader = fs.createReadStream(pathToFile, {
+//   flag: 'a+',
+//   encoding: 'UTF-8',
+//   start: 3,
+//   end: 6
+// });
+// fs.createReadStream(pathToFile)
+
+// const data = {
+//   "text": ""
+// };
 
 const endpointURL = `https://api.twitter.com/2/tweets`;
 
@@ -59,7 +68,7 @@ async function requestToken() {
   }));
 
   const req = await got(requestTokenURL, {
-    method: 'POST',
+    method: "POST",
     headers: {
       Authorization: authHeader["Authorization"]
     }
@@ -82,7 +91,7 @@ async function accessToken({
   }));
   const path = `https://api.twitter.com/oauth/access_token?oauth_verifier=${verifier}&oauth_token=${oauth_token}`
   const req = await got(path, {
-    method: 'POST',
+    method: "POST",
     headers: {
       Authorization: authHeader["Authorization"]
     }
@@ -94,6 +103,21 @@ async function accessToken({
   }
 }
 
+function streamToString(stream) {
+  return new Promise((resolve, reject) => {
+    let result = '';
+    stream.on("data", (d) => {
+      result += d.toString();
+    })
+    stream.on("end", () => {
+      resolve(result);
+    })
+    stream.on("error", () => {
+      console.log('error')
+      reject();
+    })
+  })
+}
 
 async function getRequest({
   oauth_token,
@@ -110,8 +134,18 @@ async function getRequest({
     method: 'POST'
   }, token));
 
+  let reader = fs.createReadStream(pathToFile, {
+    start: 23,
+    end: 211
+  });
+
+  const data = {
+    "text": await streamToString(reader)
+  };
+
+
   const req = await got(endpointURL, {
-    method: 'POST',
+    method: "POST",
     json: data,
     responseType: 'json',
     headers: {
