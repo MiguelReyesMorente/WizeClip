@@ -1,3 +1,6 @@
+const express = require('express')
+const app = express()
+const port = 3000
 const got = (...args) => import('got').then(({ default: got }) => got(...args))
 const crypto = require('crypto');
 const OAuth = require('oauth-1.0a');
@@ -185,3 +188,15 @@ async function getRequest({
   }
   process.exit();
 })();
+
+app.get('/', (req, res) => {
+  res.render('index.ejs');
+})
+
+app.post('/social', (req, res) => {
+  res.render('social.ejs');
+})
+
+app.listen(port, () => {
+  console.log(`WizeClip is running`)
+})
