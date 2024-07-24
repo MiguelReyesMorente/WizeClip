@@ -3,20 +3,21 @@ const crypto = require('crypto');
 const axios = require('axios');
 const OAuth = require('oauth-1.0a');
 const qs = require('querystring');
+const util = require('util')
 const fs = require('fs');
 const { text } = require('express');
 const FormData = require('form-data');
+const readline = require('readline');
+const path = require('path');
+const otrofs = require('fs').promises;
 
 const pathToTextFile = "Text/summaries.txt";
-const pathToVideoFile = "Video/newVideo.mp4";
 
-
-let videosMp4 = []
 const videoDirectoryPath = 'Text';
 const searchValue = 'Twitter';
 
 
-const readline = require('readline').createInterface({
+const readline1 = require('readline').createInterface({
   input: process.stdin,
   output: process.stdout
 });
@@ -53,20 +54,14 @@ const token = {
 };
 
 // Función INIT para empezar el proceso de subir el archivo multimedia
-async function initVideo() {
+async function initVideo(total_bytes) {
   const url = 'https://upload.twitter.com/1.1/media/upload.json';
   //const fileData = fs.readFileSync(filePath);
   const mediaType = 'video/mp4'; // Cambia esto al tipo correcto si no es un vídeo
   const command = 'INIT';
-  const total_bytes = '4108214';
+  //const total_bytes = '4108214';
   const media_category = 'tweet_video';
-  const form = new FormData();
-  /*
-  form.append("command", command);
-  form.append("total_bytes", total_bytes);
-  form.append("media_category", media_category);
-  form.append("media_type", mediaType);
-*/
+
   const request_data = {
     url: url,
     method: 'POST',
@@ -98,7 +93,10 @@ async function initVideo() {
 async function appendVideo(filePath, el_media_id) {
   const url = 'https://upload.twitter.com/1.1/media/upload.json';
   const media = fs.readFileSync(filePath);
+
+  
   //const media = fs.createReadStream(filePath);
+  
   const command = 'APPEND';
   const segment_index = '0';
   const media_id = el_media_id;
@@ -130,11 +128,11 @@ async function appendVideo(filePath, el_media_id) {
 }
 
 // Función FINALIZE para seguir con la subida el archivo multimedia
-async function finalizeVideo(el_media_id) {
+async function finalizeVideo(el_media_id, total_bytes) {
   const url = 'https://upload.twitter.com/1.1/media/upload.json';
   //const fileData = fs.readFileSync(filePath);
   const command = 'FINALIZE';
-  const total_bytes = '4108214';
+  //const total_bytes = '4108214';  
   const media_id = el_media_id;
   const request_data = {
     url: url,
@@ -163,13 +161,13 @@ async function finalizeVideo(el_media_id) {
 }
 
 // Función POSTEAR video y texto
-async function postVideo(media_id) {
+async function postVideo(media_id, texto) {
   const url = 'https://api.twitter.com/2/tweets';
   const request_data = {
     url: url,
     method: 'POST',
     data: {
-      text: "Hazme casito que soy un tweesitooo!!",
+      text: texto,
       media: {media_ids: [media_id]}
     }
   };
@@ -192,71 +190,115 @@ async function postVideo(media_id) {
 
 async function listFiles(directoryPath) {
   // Leer el contenido del directorio
-  fs.readdir(directoryPath, (err, files) => {
-    if (err) {
-      console.error(`Error reading directory: ${err}`);
-      return;
-    }
+  try{
+    return new Promise((resolve) =>{
+      fs.readdir(directoryPath, (err, files) => {
+        let videosMp4 = [];
+        if (err) {
+          console.error(`Error reading directory: ${err}`);
+          return;
+        }
+        
+        // Filtrar los ficheros con extensión .mp4
+        const mp4Files = files.filter(file => path.extname(file).toLowerCase() === '.mp4');
+    
+        // Mostrar los ficheros .mp4
+        console.log('MP4 files found:');
+        mp4Files.forEach(file => {
+            console.log(file);
+            videosMp4.push(file);
+        });
 
-    // Filtrar los ficheros con extensión .mp4
-    const mp4Files = files.filter(file => path.extname(file).toLowerCase() === '.mp4');
-
-    // Mostrar los ficheros .mp4
-    console.log('MP4 files found:');
-    mp4Files.forEach(file => {
-        videosMp4.push(file);
-    });
-
-    return videosMp4[0];
+        resolve(videosMp4[0]);
+    })
   });
+
+    
+  }catch(error){
+    console.error(error);
+  }
+
+}
+
+async function getFileSize(filePath){
+  try{
+    const stats = await otrofs.stat(filePath);
+    return String(stats.size);
+  } catch (error){
+    console.error(error);
+  }
+  
 }
 
 async function readAndStoreFollowingLines(filePath, searchValue) {
-  const fileStream = fs.createReadStream(filePath);
-  const rl = readline.createInterface({
-    input: fileStream,
-    crlfDelay: Infinity
-  });
 
-  const storedLines = [];
-  let storeNextLine = false;
+  try{
 
-  rl.on('line', (line) => {
-    if (storeNextLine) {
-      storedLines.push(line);
-      storeNextLine = false;
-    }
-
-    if (line.includes(searchValue)) {
-      storeNextLine = true;
-    }
-  });
-
-  rl.on('close', () => {
-    /*
-    console.log('Lines stored following the value "' + searchValue + '":');
+    return new Promise((resolve) => {
+      const fileStream = fs.createReadStream(filePath);
+      const rl = readline.createInterface({
+        input: fileStream,
+        crlfDelay: Infinity
+      });
+  
+      const storedLines = [];
+      let storeNextLine = false;
+  
+      rl.on('line', (line) => {
+        if (storeNextLine) {
+          storedLines.push(line);
+          storeNextLine = false;
+        }
+  
+        if (line.includes(searchValue)) {
+          storeNextLine = true;
+        }   
+      });
+  
+      rl.on('close', () => {
+        /*
+        console.log('Lines stored following the value "' + searchValue + '":');
+        
+        storedLines.forEach((line, index) => {
+          console.log(`Line ${index + 1}: ${line}`);
+        });
+        */
+        console.log(storedLines[0])
+        //return storedLines[0];
+        resolve(storedLines[0]);
+      });});
+      
     
-    storedLines.forEach((line, index) => {
-      console.log(`Line ${index + 1}: ${line}`);
-    });
-    */
-    return storedLines[0];
-  });
+
+  }catch(error){
+    console.error(error);
+  }
+
 }
 
 async function main() {
 
+    try{
+ 
   const texto = await readAndStoreFollowingLines(pathToTextFile, searchValue);
-  const video = await listFiles(videoDirectoryPath);
+  const video = await listFiles(videoDirectoryPath)
+  const videoSize = await getFileSize(videoDirectoryPath+"/"+video);
     //const filePath = 'Video/newVideo.mp4'; // Cambia esto a la ruta de tu archivo
-  const mediaId = await initVideo();
+    console.log(videoSize);
+  const mediaId = await initVideo(videoSize);
   if (mediaId) {
+    
     //await postTweetWithMedia(mediaId, status);
     await appendVideo(videoDirectoryPath+"/"+video, mediaId);
-    const media_last_id = await finalizeVideo(mediaId);
-    const delay = ms => new Promise(resolve => setTimeout(resolve, ms))    
+    const media_last_id = await finalizeVideo(mediaId, videoSize);
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms)) 
     await delay(10000) 
     await postVideo(media_last_id, texto);
+    process.exit(-1);
+  }
+
+  }catch(error){
+    console.error(error);
     process.exit(-1);
   }
 }
