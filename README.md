@@ -2,3 +2,6 @@
 
 //Para ejecutar el proyecto aplicar la siguiente instrucción:
 'node index.js;'
+
+//Instalar axios
+npm install axios
