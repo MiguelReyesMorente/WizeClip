@@ -1,192 +1,3 @@
-/*const got = (...args) => import('got').then(({ default: got }) => got(...args))
-const crypto = require('crypto');
-const OAuth = require('oauth-1.0a');
-const qs = require('querystring');
-const fs = require('fs');
-const { text } = require('express');
-const pathToTextFile = "Text/summaries.txt";
-const pathToVideoFile = "Video/newVideo.mp4";
-
-const readline = require('readline').createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
-
-
-// The code below sets the consumer key and consumer secret from your environment variables
-// To set environment variables on macOS or Linux, run the export commands below from the terminal:
-// export CONSUMER_KEY='YOUR-KEY'
-// export CONSUMER_SECRET='YOUR-SECRET'
-//const consumer_key = process.env.CONSUMER_KEY;
-//const consumer_secret = process.env.CONSUMER_SECRET;
-
-const consumer_key = 'i0NVGo12wixVEUWxMB7YToN0v';
-const consumer_secret = 'tzqRcGPsgEntD5hVX1T1l5ko2xgHGEX8FMqx1dO19jQyimtaAf';
-
-
-// Be sure to add replace the text of the with the text you wish to Tweet.
-// You can also add parameters to post polls, quote Tweets, Tweet with reply settings, and Tweet to Super Followers in addition to other features.
-// let reader = fs.createReadStream(pathToTextFile, {
-//   flag: 'a+',
-//   encoding: 'UTF-8',
-//   start: 3,
-//   end: 6
-// });
-// fs.createReadStream(pathToTextFile)
-
-// const data = {
-//   "text": ""
-// };
-
-const endpointURL = `https://api.twitter.com/2/tweets`;
-
-// this example uses PIN-based OAuth to authorize the user
-const requestTokenURL = 'https://api.twitter.com/oauth/request_token?oauth_callback=oob&x_auth_access_type=write';
-const authorizeURL = new URL('https://api.twitter.com/oauth/authorize');
-const accessTokenURL = 'https://api.twitter.com/oauth/access_token';
-
-const oauth = OAuth({
-  consumer: {
-    key: consumer_key,
-    secret: consumer_secret
-  },
-  signature_method: 'HMAC-SHA1',
-  hash_function: (baseString, key) => crypto.createHmac('sha1', key).update(baseString).digest('base64')
-});
-
-async function input(prompt) {
-  return new Promise(async (resolve, reject) => {
-    readline.question(prompt, (out) => {
-      readline.close();
-      resolve(out);
-    });
-  });
-}
-
-async function requestToken() {
-  const authHeader = oauth.toHeader(oauth.authorize({
-    url: requestTokenURL,
-    method: 'POST'
-  }));
-
-  const req = await got(requestTokenURL, {
-    method: "POST",
-    headers: {
-      Authorization: authHeader["Authorization"]
-    }
-  });
-  if (req.body) {
-    return qs.parse(req.body);
-  } else {
-    throw new Error('Cannot get an OAuth request token');
-  }
-}
-
-
-async function accessToken({
-  oauth_token,
-  oauth_token_secret
-}, verifier) {
-  const authHeader = oauth.toHeader(oauth.authorize({
-    url: accessTokenURL,
-    method: 'POST'
-  }));
-  const path = `https://api.twitter.com/oauth/access_token?oauth_verifier=${verifier}&oauth_token=${oauth_token}`
-  const req = await got(path, {
-    method: "POST",
-    headers: {
-      Authorization: authHeader["Authorization"]
-    }
-  });
-  if (req.body) {
-    return qs.parse(req.body);
-  } else {
-    throw new Error('Cannot get an OAuth request token');
-  }
-}
-
-function streamToString(stream) {
-  return new Promise((resolve, reject) => {
-    let result = '';
-    stream.on("data", (d) => {
-      result += d.toString();
-    })
-    stream.on("end", () => {
-      resolve(result);
-    })
-    stream.on("error", () => {
-      console.log('error')
-      reject();
-    })
-  })
-}
-
-async function getRequest({
-  oauth_token,
-  oauth_token_secret
-}) {
-
-  const token = {
-    key: oauth_token,
-    secret: oauth_token_secret
-  };
-
-  const authHeader = oauth.toHeader(oauth.authorize({
-    url: endpointURL,
-    method: 'POST'
-  }, token));
-
-  let reader = fs.createReadStream(pathToTextFile, {
-    start: 23,
-    end: 211
-  });
-
-  const data = {
-    "text": await streamToString(reader)
-  };
-
-
-  const req = await got(endpointURL, {
-    method: "POST",
-    json: data,
-    responseType: 'json',
-    headers: {
-      Authorization: authHeader["Authorization"],
-      'user-agent': "v2CreateTweetJS",
-      'content-type': "application/json",
-      'accept': "application/json"
-    }
-  });
-  if (req.body) {
-    return req.body;
-  } else {
-    throw new Error('Unsuccessful request');
-  }
-}
-
-
-(async () => {
-  try {
-    // Get request token
-    const oAuthRequestToken = await requestToken();
-    // Get authorization
-    authorizeURL.searchParams.append('oauth_token', oAuthRequestToken.oauth_token);
-    console.log('Please go here and authorize:', authorizeURL.href);
-    const pin = await input('Paste the PIN here: ');
-    // Get the access token
-    const oAuthAccessToken = await accessToken(oAuthRequestToken, pin.trim());
-    // Make the request
-    const response = await getRequest(oAuthAccessToken);
-    console.dir(response, {
-      depth: null
-    });
-  } catch (e) {
-    console.log(e);
-    process.exit(-1);
-  }
-  process.exit();
-})();*/
-
 const got = (...args) => import('got').then(({ default: got }) => got(...args))
 const crypto = require('crypto');
 const axios = require('axios');
@@ -198,6 +9,12 @@ const FormData = require('form-data');
 
 const pathToTextFile = "Text/summaries.txt";
 const pathToVideoFile = "Video/newVideo.mp4";
+
+
+let videosMp4 = []
+const videoDirectoryPath = 'Text';
+const searchValue = 'Twitter';
+
 
 const readline = require('readline').createInterface({
   input: process.stdin,
@@ -373,17 +190,73 @@ async function postVideo(media_id) {
   }
 }
 
+async function listFiles(directoryPath) {
+  // Leer el contenido del directorio
+  fs.readdir(directoryPath, (err, files) => {
+    if (err) {
+      console.error(`Error reading directory: ${err}`);
+      return;
+    }
+
+    // Filtrar los ficheros con extensión .mp4
+    const mp4Files = files.filter(file => path.extname(file).toLowerCase() === '.mp4');
+
+    // Mostrar los ficheros .mp4
+    console.log('MP4 files found:');
+    mp4Files.forEach(file => {
+        videosMp4.push(file);
+    });
+
+    return videosMp4[0];
+  });
+}
+
+async function readAndStoreFollowingLines(filePath, searchValue) {
+  const fileStream = fs.createReadStream(filePath);
+  const rl = readline.createInterface({
+    input: fileStream,
+    crlfDelay: Infinity
+  });
+
+  const storedLines = [];
+  let storeNextLine = false;
+
+  rl.on('line', (line) => {
+    if (storeNextLine) {
+      storedLines.push(line);
+      storeNextLine = false;
+    }
+
+    if (line.includes(searchValue)) {
+      storeNextLine = true;
+    }
+  });
+
+  rl.on('close', () => {
+    /*
+    console.log('Lines stored following the value "' + searchValue + '":');
+    
+    storedLines.forEach((line, index) => {
+      console.log(`Line ${index + 1}: ${line}`);
+    });
+    */
+    return storedLines[0];
+  });
+}
+
 async function main() {
-  const filePath = 'Video/newVideo.mp4'; // Cambia esto a la ruta de tu archivo
-  const status = 'Hazme casito que soy un tweesitooo!!';
+
+  const texto = await readAndStoreFollowingLines(pathToTextFile, searchValue);
+  const video = await listFiles(videoDirectoryPath);
+    //const filePath = 'Video/newVideo.mp4'; // Cambia esto a la ruta de tu archivo
   const mediaId = await initVideo();
   if (mediaId) {
     //await postTweetWithMedia(mediaId, status);
-    await appendVideo(filePath, mediaId);
+    await appendVideo(videoDirectoryPath+"/"+video, mediaId);
     const media_last_id = await finalizeVideo(mediaId);
     const delay = ms => new Promise(resolve => setTimeout(resolve, ms))    
     await delay(10000) 
-    await postVideo(media_last_id);
+    await postVideo(media_last_id, texto);
     process.exit(-1);
   }
 }
