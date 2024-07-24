@@ -244,11 +244,12 @@ async function initVideo() {
   const total_bytes = '254582';
   const media_category = 'tweet_video';
   const form = new FormData();
+  /*
   form.append("command", command);
   form.append("total_bytes", total_bytes);
   form.append("media_category", media_category);
   form.append("media_type", mediaType);
-
+*/
   const request_data = {
     url: url,
     method: 'POST',
@@ -257,18 +258,19 @@ async function initVideo() {
       total_bytes: total_bytes,
       media_category: media_category,
       media_type: mediaType,
-    },
+    }
   };
-  const headers = oauth.toHeader(oauth.authorize({url:url, method:'POST'}, token));
-  try {
-    const response = await axios.post(url, form, {
+  const headers = oauth.toHeader(oauth.authorize({url: url, method: 'POST'}, token));
+  try {    
+    const response = await axios.post(url, request_data.data, {
       headers: {
         ...headers,
         'Content-Type': 'multipart/form-data',
       },
     });
     console.log(response.data);
-    return String(response.data.media_id);
+    console.log("MEDIA CONVERTIDA -> " + String(response.data.media_id));
+    return response.data.media_id_string;
   } catch (error) {
     console.error('Error uploading media en INIT:', error.response.data);
     process.exit(-1);
@@ -278,8 +280,8 @@ async function initVideo() {
 // Función APPEND para seguir con la subida el archivo multimedia
 async function appendVideo(filePath, el_media_id) {
   const url = 'https://upload.twitter.com/1.1/media/upload.json';
-  //const fileData = fs.readFileSync(filePath);
   const media = fs.readFileSync(filePath);
+  //const media = fs.createReadStream(filePath);
   const command = 'APPEND';
   const segment_index = '0';
   const media_id = el_media_id;
@@ -291,10 +293,11 @@ async function appendVideo(filePath, el_media_id) {
       media: media,
       segment_index: segment_index,
       media_id: media_id,
-    },
+    }
   };
-  const headers = oauth.toHeader(oauth.authorize({url:url, method:'POST'}, token));
+  const headers = oauth.toHeader(oauth.authorize({url: url, method: 'POST'}, token));
   try {
+    console.log(request_data);
     const response = await axios.post(url, request_data.data, {
       headers: {
         ...headers,
@@ -325,7 +328,7 @@ async function finalizeVideo(el_media_id) {
       media_id: media_id,
     },
   };
-  const headers = oauth.toHeader(oauth.authorize({url:url, method:'POST'}, token));
+  const headers = oauth.toHeader(oauth.authorize({url: url, method: 'POST'}, token));
   try {
     const response = await axios.post(url, request_data.data, {
       headers: {
@@ -334,7 +337,8 @@ async function finalizeVideo(el_media_id) {
       },
     });
     console.log(response.data);
-    return String(response.data.media_id);
+    console.log("MEDIA CONVERTIDA -> " + String(response.data.media_id));
+    return response.data.media_id_string;
   } catch (error) {
     console.error('Error uploading media en FINALIZE:', error.response.data);
     process.exit(-1);
@@ -348,12 +352,13 @@ async function postVideo(media_id) {
     url: url,
     method: 'POST',
     data: {
-      text: "Hola new video in sesion",
+      text: "Tremenda pruebita",
       media: {media_ids: [media_id]}
     }
   };
-  const headers = oauth.toHeader(oauth.authorize({url:url, method:'POST'}, token));
+  const headers = oauth.toHeader(oauth.authorize({url: url, method: 'POST'}, token));
   try {
+    console.log(request_data);
     const response = await axios.post(url, request_data.data, {
       headers: {
         ...headers,
@@ -403,7 +408,10 @@ async function main() {
     //await postTweetWithMedia(mediaId, status);
     await appendVideo(filePath, mediaId);
     const media_last_id = await finalizeVideo(mediaId);
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms))    
+    await delay(5000) 
     await postVideo(media_last_id);
+    process.exit(-1);
   }
 }
 main();
